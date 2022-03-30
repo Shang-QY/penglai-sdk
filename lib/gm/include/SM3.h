@@ -1,13 +1,10 @@
 /************************************************************************
   Copyright (c) IPADS@SJTU 2021. Modification to support Penglai (RISC-V TEE)
-  
-  This file contains GM/T SM2 standard implementation, provided by the Commercial
-  Cryptography Testing Center, see <http://www.scctc.org.cn> for more infomation.
-  
-  File name:       SM3.c
-  Version:         SM3_V1.1
-  Date:            Sep 18,2016
-  Description:     to calculate a hash message from a given message
+
+  This file contains implementation of SM3 hash algorithm, part of
+  codes provided by the Commercial Cryptography Testing Center,
+  see <http://www.scctc.org.cn> for more infomation.
+
   Function List:
     1.SM3_256            //calls SM3_init, SM3_process and SM3_done to calculate hash value
     2.SM3_init           //init the SM3 state
@@ -20,7 +17,8 @@
     9.BigEndian          //called by SM3_compress and SM3_done.GM/T 0004-2012 requires to use big-endian.
                          //if CPU uses little-endian, BigEndian function is a necessary call to change the
                          //little-endian format into big-endian format.
-    10.SM3_SelfTest      //test whether the SM3 calculation is correct by comparing the hash result with the standard data
+    10.SM3_SelfTest      //test whether the SM3 calculation is correct by comparing
+                         //the hash result with the standard data
 **************************************************************************/
 
 #pragma once
@@ -55,8 +53,69 @@ typedef struct
   unsigned char buf[64];
 } SM3_STATE;
 
+/******************************************************************************
+  Function:         SM3_init
+  Description:      initiate SM3 state
+  Calls:
+  Called By:        SM3_256
+  Input:            SM3_STATE *md
+  Output:           SM3_STATE *md
+  Return:           null
+  Others:
+*******************************************************************************/
 void SM3_init(SM3_STATE *md);
+
+/******************************************************************************
+  Function:         SM3_process
+  Description:      compress the first (len/64) blocks of message
+  Calls:            SM3_compress
+  Called By:        SM3_256
+  Input:            SM3_STATE *md
+                    unsigned char buf[len] //the input message
+                    int len                //bytelen of message
+  Output:           SM3_STATE *md
+  Return:           null
+  Others:
+*******************************************************************************/
 void SM3_process(SM3_STATE *md, unsigned char buf[], int len);
+
+/******************************************************************************
+  Function:         SM3_done
+  Description:      compress the rest message that the SM3_process has left behind
+  Calls:            SM3_compress
+  Called By:        SM3_256
+  Input:            SM3_STATE *md
+  Output:           unsigned char *hash
+  Return:           null
+  Others:
+*******************************************************************************/
 void SM3_done(SM3_STATE *md, unsigned char *hash);
+
+/******************************************************************************
+  Function:         SM3_256
+  Description:      calculate a hash value from a given message
+  Calls:            SM3_init
+                    SM3_process
+                    SM3_done
+  Called By:
+  Input:            unsigned char buf[len]  //the input message
+                    int len                 //bytelen of the message
+  Output:           unsigned char hash[32]
+  Return:           null
+  Others:
+*******************************************************************************/
 void SM3_256(unsigned char buf[], int len, unsigned char hash[]);
+
+/******************************************************************************
+  Function:         SM3_SelfTest
+  Description:      test whether the SM3 calculation is correct by comparing
+                    the hash result with the standard result
+  Calls:            SM3_256
+  Called By:
+  Input:            null
+  Output:           null
+  Return:           0      //the SM3 operation is correct
+                    1      //the sm3 operation is wrong
+  Others:
+*******************************************************************************/
 int SM3_SelfTest();
