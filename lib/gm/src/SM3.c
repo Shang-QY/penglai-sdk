@@ -1,10 +1,10 @@
 /************************************************************************
   Copyright (c) IPADS@SJTU 2021. Modification to support Penglai (RISC-V TEE)
 
-  File name:       SM3.c
-  Version:         SM3_V1.1
-  Date:            Sep 18,2016
-  Description:     to calculate a hash message from a given message
+  This file contains implementation of SM3 hash algorithm, part of
+  codes provided by the Commercial Cryptography Testing Center,
+  see <http://www.scctc.org.cn> for more infomation.
+
   Function List:
     1.SM3_256            //calls SM3_init, SM3_process and SM3_done to calculate hash value
     2.SM3_init           //init the SM3 state
@@ -17,12 +17,8 @@
     9.BigEndian          //called by SM3_compress and SM3_done.GM/T 0004-2012 requires to use big-endian.
                          //if CPU uses little-endian, BigEndian function is a necessary call to change the
                          //little-endian format into big-endian format.
-    10.SM3_SelfTest      //test whether the SM3 calculation is correct by comparing the hash result with the standard data
-  History:
-    1. Date:       Sep 18,2016
-       Author: Mao Yingying, Huo Lili
-       Modification: 1)add notes to all the functions
-                     2)add SM3_SelfTest function
+    10.SM3_SelfTest      //test whether the SM3 calculation is correct by comparing
+                         //the hash result with the standard data
 **************************************************************************/
 
 #include "SM3.h"
@@ -339,16 +335,16 @@ void SM3_done(SM3_STATE *md, unsigned char hash[])
 }
 
 /******************************************************************************
-  Function:          SM3_256
-  Description:       calculate a hash value from a given message
-  Calls:             SM3_init
-                     SM3_process
-                     SM3_done
+  Function:         SM3_256
+  Description:      calculate a hash value from a given message
+  Calls:            SM3_init
+                    SM3_process
+                    SM3_done
   Called By:
-  Input:             unsigned char buf[len] //the input message
-                     int len                  //bytelen of the message
-  Output:            unsigned char hash[32]
-  Return:            null
+  Input:            unsigned char buf[len]  //the input message
+                    int len                 //bytelen of the message
+  Output:           unsigned char hash[32]
+  Return:           null
   Others:
 *******************************************************************************/
 void SM3_256(unsigned char buf[], int len, unsigned char hash[])
@@ -360,15 +356,15 @@ void SM3_256(unsigned char buf[], int len, unsigned char hash[])
 }
 
 /******************************************************************************
-  Function:          SM3_SelfTest
-  Description:       test whether the SM3 calculation is correct by comparing
-                     the hash result with the standard result
-  Calls:             SM3_256
+  Function:         SM3_SelfTest
+  Description:      test whether the SM3 calculation is correct by comparing
+                    the hash result with the standard result
+  Calls:            SM3_256
   Called By:
-  Input:             null
-  Output:            null
-  Return:            0      //the SM3 operation is correct
-                     1      //the sm3 operation is wrong
+  Input:            null
+  Output:           null
+  Return:           0      //the SM3 operation is correct
+                    1      //the sm3 operation is wrong
   Others:
 *******************************************************************************/
 int SM3_SelfTest()
