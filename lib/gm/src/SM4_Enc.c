@@ -19,7 +19,7 @@
 #include "SM4.h"
 
 #define ocb_ntz(a) __builtin_ctz((unsigned int)a)
-#define ocb_ntz_round(a) ((a) == 0) ? 0 : (sizeof(unsigned int) * 8 - __builtin_clz((unsigned int)(a)) - 1)
+#define ocb_ntz_round(a) (((a) == 0) ? 0 : (sizeof(unsigned int) * 8 - __builtin_clz((unsigned int)(a)) - 1))
 #define ocb_memcpy(a, b, c) __builtin_memcpy(a, b, c)
 
 /**
