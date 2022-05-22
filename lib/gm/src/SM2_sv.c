@@ -1,32 +1,29 @@
 /************************************************************************
   Copyright (c) IPADS@SJTU 2021. Modification to support Penglai (RISC-V TEE)
-  
-  This file contains GM/T SM2 standard implementation, provided by the Commercial
-  Cryptography Testing Center, see <http://www.scctc.org.cn> for more infomation.
 
-  File name:          SM2_sv.c
-  Version:            SM2_sv_V1.0
-  Date:               Sep 27,2016
-  Description:        implementation of SM2 signature algorithm and verification algorithm
+  This file contains implementation of SM2 signature algorithm and verification
+  algorithm, part of codes provided by the Commercial Cryptography Testing Center,
+  see <http://www.scctc.org.cn> for more infomation.
+
   Function List:
-    1.SM2_Init                          //initiate SM2 curve
-    2.Test_Point                        //test if the given point is on SM2 curve
-    3.Test_PubKey                       //test if the given public key is valid
-    4.Test_Zero                         //test if the big x equals zero
-    5.Test_n                            //test if the big x equals n
-    6.Test_Range                        //test if the big x belong to the range[1,n-1]
-    7.SM2_KeyGeneration                 //generate SM2 key pair
-    8.SM2_Sign                          //SM2 signature algorithm
-    9.SM2_Verify                        //SM2 verification
-    10.SM2_SelfCheck()                  //SM2 self-check
-    11.SM3_256()                        //this function can be found in SM3.c and SM3.h
-  
+    1.SM2_Init                  //initiate SM2 curve
+    2.Test_Point                //test if the given point is on SM2 curve
+    3.Test_PubKey               //test if the given public key is valid
+    4.Test_Zero                 //test if the big x equals zero
+    5.Test_n                    //test if the big x equals n
+    6.Test_Range                //test if the big x belong to the range[1,n-1]
+    7.SM2_KeyGeneration         //generate SM2 key pair
+    8.SM2_Sign                  //SM2 signature algorithm
+    9.SM2_Verify                //SM2 verification
+    10.SM2_SelfCheck()          //SM2 self-check
+    11.SM3_256()                //this function can be found in SM3.c and SM3.h
+
   Additional Functions Added By PENGLAI Enclave:
-	1.MIRACL_Init						//init miracl system
-	2.SM2_make_prikey					//generate a SM2 private key 
-	3.SM2_make_pubkey					//generate a SM2 public Key out of a private Key
-	4.SM2_gen_random					//generate a random number K lies in [1,n-1]
-	5.SM2_compute_ZA					//compute ZA out of a given pubkey
+    1.MIRACL_Init               //init miracl system
+    2.SM2_make_prikey           //generate a SM2 private key
+    3.SM2_make_pubkey           //generate a SM2 public Key out of a private Key
+    4.SM2_gen_random            //generate a random number K lies in [1,n-1]
+    5.SM2_compute_ZA            //compute ZA out of a given pubkey
 **************************************************************************/
 
 #include "miracl.h"
@@ -39,28 +36,28 @@
 #define MAX_MESSAGE_SIZE 1024
 
 const char SM2_p[32] = {
-    0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+	0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
 const char SM2_a[32] = {
-    0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfc};
+	0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfc};
 
 const char SM2_b[32] = {
-    0x28, 0xe9, 0xfa, 0x9e, 0x9d, 0x9f, 0x5e, 0x34, 0x4d, 0x5a, 0x9e, 0x4b, 0xcf, 0x65, 0x09, 0xa7,
-    0xf3, 0x97, 0x89, 0xf5, 0x15, 0xab, 0x8f, 0x92, 0xdd, 0xbc, 0xbd, 0x41, 0x4d, 0x94, 0x0e, 0x93};
+	0x28, 0xe9, 0xfa, 0x9e, 0x9d, 0x9f, 0x5e, 0x34, 0x4d, 0x5a, 0x9e, 0x4b, 0xcf, 0x65, 0x09, 0xa7,
+	0xf3, 0x97, 0x89, 0xf5, 0x15, 0xab, 0x8f, 0x92, 0xdd, 0xbc, 0xbd, 0x41, 0x4d, 0x94, 0x0e, 0x93};
 
 const char SM2_Gx[32] = {
-    0x32, 0xc4, 0xae, 0x2c, 0x1f, 0x19, 0x81, 0x19, 0x5f, 0x99, 0x04, 0x46, 0x6a, 0x39, 0xc9, 0x94,
-    0x8f, 0xe3, 0x0b, 0xbf, 0xf2, 0x66, 0x0b, 0xe1, 0x71, 0x5a, 0x45, 0x89, 0x33, 0x4c, 0x74, 0xc7};
+	0x32, 0xc4, 0xae, 0x2c, 0x1f, 0x19, 0x81, 0x19, 0x5f, 0x99, 0x04, 0x46, 0x6a, 0x39, 0xc9, 0x94,
+	0x8f, 0xe3, 0x0b, 0xbf, 0xf2, 0x66, 0x0b, 0xe1, 0x71, 0x5a, 0x45, 0x89, 0x33, 0x4c, 0x74, 0xc7};
 
 const char SM2_Gy[32] = {
-    0xbc, 0x37, 0x36, 0xa2, 0xf4, 0xf6, 0x77, 0x9c, 0x59, 0xbd, 0xce, 0xe3, 0x6b, 0x69, 0x21, 0x53,
-    0xd0, 0xa9, 0x87, 0x7c, 0xc6, 0x2a, 0x47, 0x40, 0x02, 0xdf, 0x32, 0xe5, 0x21, 0x39, 0xf0, 0xa0};
+	0xbc, 0x37, 0x36, 0xa2, 0xf4, 0xf6, 0x77, 0x9c, 0x59, 0xbd, 0xce, 0xe3, 0x6b, 0x69, 0x21, 0x53,
+	0xd0, 0xa9, 0x87, 0x7c, 0xc6, 0x2a, 0x47, 0x40, 0x02, 0xdf, 0x32, 0xe5, 0x21, 0x39, 0xf0, 0xa0};
 
 const char SM2_n[32] = {
-    0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    0x72, 0x03, 0xdf, 0x6b, 0x21, 0xc6, 0x05, 0x2b, 0x53, 0xbb, 0xf4, 0x09, 0x39, 0xd5, 0x41, 0x23};
+	0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0x72, 0x03, 0xdf, 0x6b, 0x21, 0xc6, 0x05, 0x2b, 0x53, 0xbb, 0xf4, 0x09, 0x39, 0xd5, 0x41, 0x23};
 
 big Gx, Gy, p, a, b, n;
 epoint *G, *nG;
@@ -70,19 +67,19 @@ char g_mem_point[MR_ECP_RESERVE(2)];
 static void MIRACL_Init()
 {
 	unsigned int seed = 0;
-    mirsys(128, 16);
-    /*
-     * Note: Please use penglai_set_rand_seed() first to get a
-     * real-random number as 'seed'.
-     */
-    penglai_read_rand((unsigned char *)&seed, sizeof(unsigned int));
-    irand((unsigned int)seed);
+	mirsys(128, 16);
+	/*
+	 * Note: Please use penglai_set_rand_seed() first to get a
+	 * real-random number as 'seed'.
+	 */
+	penglai_read_rand((unsigned char *)&seed, sizeof(unsigned int));
+	irand((unsigned int)seed);
 }
 
 /****************************************************************
   Function:             SM2_Init
   Description:          Initiate SM2 curve, must called before
-							SM2_KeyGeneration,SM2_Sign,SM2_Verify.
+                        SM2_KeyGeneration,SM2_Sign,SM2_Verify.
   Calls:                MIRACL functions
   Called By:            SM2_SelfCheck
   Input:                null
@@ -95,11 +92,11 @@ static void MIRACL_Init()
 static int SM2_Init()
 {
 	static int success_excuted = 0;
-    if(success_excuted == 1){
-        return 0;
-    }
+	if(success_excuted == 1){
+		return 0;
+	}
 
-    MIRACL_Init();
+	MIRACL_Init();
 
 	memset(g_mem, 0, MR_BIG_RESERVE(6));
 	Gx = mirvar_mem(g_mem, 0);
@@ -117,7 +114,7 @@ static int SM2_Init()
 	bytes_to_big(SM2_NUMWORD, SM2_n, n);
 
 	ecurve_init(a, b, p, MR_PROJECTIVE);
-	
+
 	memset(g_mem_point, 0, MR_ECP_RESERVE(2));
 	G = epoint_init_mem(g_mem_point, 0);
 	nG = epoint_init_mem(g_mem_point, 1);
@@ -127,8 +124,8 @@ static int SM2_Init()
 	ecurve_mult(n, G, nG);
 	if (!point_at_infinity(nG)) //test if the order of the point is n
 		return ERR_ORDER;
-	
-    success_excuted = 1;
+
+	success_excuted = 1;
 	return 0;
 }
 
@@ -233,7 +230,7 @@ static int Test_Zero(big x)
 	char mem[MR_BIG_RESERVE(1)];
 	memset(mem, 0, MR_BIG_RESERVE(1));
 	z = mirvar_mem(mem, 0);
-	
+
 	zero(z);
 	if (mr_compare(x, z) == 0)
 		return 1;
@@ -285,7 +282,7 @@ static int Test_Range(big x)
 	return 0;
 }
 
-/* 
+/*
  * the private key, a big number lies in[1,n-2]
  */
 static void SM2_make_prikey(unsigned char prikey[])
@@ -308,17 +305,17 @@ static void SM2_make_prikey(unsigned char prikey[])
 }
 
 /****************************************************************
-  Function:            SM2_make_pubkey
-  Description:         calculate a pubKey out of a given priKey
-  Calls:               
-  Called By:           SM2_KeyGeneration()
-  Input:               priKey       // a big number lies in[1,n-2]
-  Output:              pubKey       // pubKey=[priKey]G
-  Return:              0: success
-                       2: a point at infinity
-                       5: X or Y coordinate is beyond Fq
-                       3: not a valid point on curve
-                       4: not a point of order n
+  Function:         SM2_make_pubkey
+  Description:      calculate a pubKey out of a given priKey
+  Calls:
+  Called By:        SM2_KeyGeneration()
+  Input:            priKey       // a big number lies in[1,n-2]
+  Output:           pubKey       // pubKey=[priKey]G
+  Return:           0: success
+                    2: a point at infinity
+                    5: X or Y coordinate is beyond Fq
+                    3: not a valid point on curve
+                    4: not a point of order n
   Others:
 ****************************************************************/
 int SM2_make_pubkey(unsigned char PriKey[], unsigned char Px[], unsigned char Py[])
@@ -329,9 +326,9 @@ int SM2_make_pubkey(unsigned char PriKey[], unsigned char Px[], unsigned char Py
 	char mem_point[MR_ECP_RESERVE(1)];
 	char mem[MR_BIG_RESERVE(3)];
 
-    i = SM2_Init();
-    if (i)
-        return i;
+	i = SM2_Init();
+	if (i)
+		return i;
 
 	memset(mem_point, 0, MR_ECP_RESERVE(1));
 	PA 	= epoint_init_mem(mem_point, 0);
@@ -355,26 +352,26 @@ int SM2_make_pubkey(unsigned char PriKey[], unsigned char Px[], unsigned char Py
 }
 
 /****************************************************************
-  Function:            SM2_KeyGeneration
-  Description:         generate a priKey and calculate a pubKey out of it
-  Calls:               SM2_make_pubkey()
-  Called By:           SM2_SelfCheck()
-  Input:               priKey       // a big number lies in[1,n-2]
-  Output:              pubKey       // pubKey=[priKey]G
-  Return:              0: success
-                       2: a point at infinity
-                       5: X or Y coordinate is beyond Fq
-                       3: not a valid point on curve
-                       4: not a point of order n
+  Function:         SM2_KeyGeneration
+  Description:      generate a priKey and calculate a pubKey out of it
+  Calls:            SM2_make_pubkey()
+  Called By:        SM2_SelfCheck()
+  Input:            priKey       // a big number lies in[1,n-2]
+  Output:           pubKey       // pubKey=[priKey]G
+  Return:           0: success
+                    2: a point at infinity
+                    5: X or Y coordinate is beyond Fq
+                    3: not a valid point on curve
+                    4: not a point of order n
   Others:
 ****************************************************************/
 int SM2_KeyGeneration(unsigned char PriKey[], unsigned char Px[], unsigned char Py[])
 {
 	int i = 0;
-	
-    i = SM2_Init();
-    if (i)
-        return i;
+
+	i = SM2_Init();
+	if (i)
+		return i;
 
 	SM2_make_prikey(PriKey);
 	i = SM2_make_pubkey(PriKey, Px, Py);
@@ -383,7 +380,7 @@ int SM2_KeyGeneration(unsigned char PriKey[], unsigned char Px[], unsigned char 
 	return 0;
 }
 
-/* 
+/*
  * random, a random number K lies in [1,n-1]
  */
 static void SM2_gen_random(unsigned char rand[])
@@ -436,19 +433,19 @@ static void SM2_compute_ZA(unsigned char ZA[], unsigned char Px[], unsigned char
 }
 
 /****************************************************************
-  Function:            SM2_Sign
-  Description:         SM2 signature algorithm
-  Calls:               SM2_Init(),Test_Zero(),Test_n(), SM3_256()
-  Called By:           SM2_SelfCheck()
-  Input:               message     //the message to be signed
-                       len         //the length of message
-                       d           //the private key
-  Output:              R,S         //signature result
-  Return:              0: success
-                       1: parameter initialization error;
-                       4: the given point G is not a point of order n
-                       6: the signed r equals 0 or r+rand equals n
-                       7 the signed s equals 0
+  Function:         SM2_Sign
+  Description:      SM2 signature algorithm
+  Calls:            SM2_Init(),Test_Zero(),Test_n(), SM3_256()
+  Called By:        SM2_SelfCheck()
+  Input:            message     //the message to be signed
+                    len         //the length of message
+                    d           //the private key
+  Output:           R,S         //signature result
+  Return:           0: success
+                    1: parameter initialization error;
+                    4: the given point G is not a point of order n
+                    6: the signed r equals 0 or r+rand equals n
+                    7 the signed s equals 0
   Others:
 ****************************************************************/
 int SM2_Sign(unsigned char *message, int len, unsigned char d[], unsigned char R[], unsigned char S[])
@@ -461,15 +458,15 @@ int SM2_Sign(unsigned char *message, int len, unsigned char d[], unsigned char R
 	unsigned char M[MAX_MESSAGE_SIZE + SM3_len / 8 + 1];
 	char mem[MR_BIG_RESERVE(11)];
 	char mem_point[MR_ECP_RESERVE(1)];
-    int i;
+	int i;
 
 	big dA, r, s, e, k, KGx, KGy;
 	big rem, rk, z1, z2;
 	epoint *KG;
 
-    i = SM2_Init();
-    if (i)
-        return i;
+	i = SM2_Init();
+	if (i)
+		return i;
 
 	//initiate
 	memset(mem, 0, MR_BIG_RESERVE(11));
@@ -567,15 +564,15 @@ int SM2_Verify(unsigned char *message, int len, unsigned char Px[], unsigned cha
 	unsigned char M[MAX_MESSAGE_SIZE + SM3_len / 8 + 1];
 	char mem[MR_BIG_RESERVE(10)];
 	char mem_point[MR_ECP_RESERVE(3)];
-    int i;
+	int i;
 
 	big PAx, PAy, r, s, e, t, rem, x1, y1;
 	big RR;
 	epoint *PA, *sG, *tPA;
 
-    i = SM2_Init();
-    if (i)
-        return i;
+	i = SM2_Init();
+	if (i)
+		return i;
 
 	memset(mem, 0, MR_BIG_RESERVE(10));
 	PAx = mirvar_mem(mem, 0);

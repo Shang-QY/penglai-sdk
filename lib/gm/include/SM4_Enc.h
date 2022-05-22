@@ -7,13 +7,13 @@
   provide both message authentication and privacy.
 
   Macro definition:
-    1.CBC_CipherTextLen                 // get CBC ciphertext length by plaintext length
-    2.OCB_CipherTextLen                 // get OCB ciphertext length by plaintext length
+    1.CBC_CipherTextLen                 //get CBC ciphertext length by plaintext length
+    2.OCB_CipherTextLen                 //get OCB ciphertext length by plaintext length
   Function List:
-    1.SM4_CBC_Encrypt                   // CBC encryption function
-    2.SM4_CBC_Decrypt                   // CBC decryption function
-    3.SM4_OCB_Encrypt                   // OCB encryption function
-    4.SM4_OCB_Decrypt                   // OCB decryption function
+    1.SM4_CBC_Encrypt                   //CBC encryption function
+    2.SM4_CBC_Decrypt                   //CBC decryption function
+    3.SM4_OCB_Encrypt                   //OCB encryption function
+    4.SM4_OCB_Decrypt                   //OCB decryption function
 **************************************************************************/
 
 #pragma once
@@ -42,7 +42,7 @@
  * @return                    Size of ciphertext in byte after encrypt.
  */
 int SM4_CBC_Encrypt(const unsigned char *Key, const unsigned char *IV, const unsigned char PlainText[],
-    int PlainTextLen, unsigned char CipherText[], int CipherTextLen);
+	int PlainTextLen, unsigned char CipherText[], int CipherTextLen);
 
 /**
  * Encrypts a message with associated data.
@@ -57,7 +57,7 @@ int SM4_CBC_Encrypt(const unsigned char *Key, const unsigned char *IV, const uns
  * @return                    Size of plaintext in byte after decrypt.
  */
 int SM4_CBC_Decrypt(const unsigned char *Key, const unsigned char *IV, const unsigned char CipherText[],
-    int CipherTextLen, unsigned char PlainText[], int PlainTextLen);
+	int CipherTextLen, unsigned char PlainText[], int PlainTextLen);
 
 #define OCB_TAG_SIZE      16
 /**
@@ -81,8 +81,8 @@ int SM4_CBC_Decrypt(const unsigned char *Key, const unsigned char *IV, const uns
  * @param out                    output with length [message_length + 16 bytes]
  */
 void SM4_OCB_Encrypt(const unsigned char key[16], const unsigned char nonce[16], unsigned int nonce_length,
-    const unsigned char *message, unsigned int message_length, const unsigned char *associated_data,
-    int associated_data_length, unsigned char *out);
+	const unsigned char *message, unsigned int message_length, const unsigned char *associated_data,
+	int associated_data_length, unsigned char *out);
 
 /**
  * Decrypts a message with associated data.
@@ -100,5 +100,5 @@ void SM4_OCB_Encrypt(const unsigned char key[16], const unsigned char nonce[16],
  * @return                       MUST BE CHECKED. Zero if decipher succesful.
  */
 int SM4_OCB_Decrypt(const unsigned char key[16], const unsigned char nonce[16], unsigned int nonce_length,
-    const unsigned char *encrypted, unsigned int encrypted_length, const unsigned char *associated_data,
-    int associated_data_length, unsigned char *out);
+	const unsigned char *encrypted, unsigned int encrypted_length, const unsigned char *associated_data,
+	int associated_data_length, unsigned char *out);
