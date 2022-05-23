@@ -103,12 +103,23 @@ void hash_enclave(unsigned long entry_point, enclave_mem_t* enclave_mem, void* h
 {
   SM3_STATE hash_ctx;
   uintptr_t nonce = nonce_arg;
+  unsigned long umem = DEFAULT_UNTRUSTED_PTR;
+  unsigned long umem_size = DEFAULT_UNTRUSTED_SIZE;
+  unsigned long kbuffer = ENCLAVE_DEFAULT_KBUFFER;
+  unsigned long kbuffer_size = ENCLAVE_DEFAULT_KBUFFER_SIZE;
 
   SM3_init(&hash_ctx);
 
   SM3_process(&hash_ctx, (unsigned char*)(&entry_point), sizeof(unsigned long));
-//   print_sm3_state(&hash_ctx, "entry_p");
-
+  // configuration parameters
+  SM3_process(&hash_ctx, (unsigned char*)(&umem),
+        sizeof(unsigned long));
+  SM3_process(&hash_ctx, (unsigned char*)(&umem_size),
+        sizeof(unsigned long));
+  SM3_process(&hash_ctx, (unsigned char*)(&kbuffer),
+        sizeof(unsigned long));
+  SM3_process(&hash_ctx, (unsigned char*)(&kbuffer_size),
+        sizeof(unsigned long));
   hash_enclave_mem(&hash_ctx, enclave_mem->enclave_root_pt,
       (VA_BITS - RISCV_PGSHIFT) / RISCV_PGLEVEL_BITS, 0, 1);
 
