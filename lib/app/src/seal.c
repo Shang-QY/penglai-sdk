@@ -92,6 +92,13 @@ static void data_copy(penglai_sealed_data_t *sealed_data, uint8_t *salt, uint8_t
     return;
 }
 
+unsigned long read_cycles_s(void)
+{
+    unsigned long cycles;
+    asm volatile ("rdcycle %0" : "=r" (cycles));
+    return cycles;
+}
+
 /* penglai_seal_data
     * Purpose: This algorithm is used to SM4-OCB encrypt the input data.  Specifically,
     *          two input data sets can be provided, one is the text to encrypt (p_text2encrypt)
@@ -124,10 +131,11 @@ int penglai_seal_data(const uint32_t additional_MACtext_length,
     const uint32_t sealed_data_size,
     penglai_sealed_data_t *p_sealed_data){
 
-    uint8_t key_buf[SEAL_KEY_LEN];
+    uint8_t key_buf[SEAL_KEY_LEN] = {148, 216, 199, 166, 142, 239, 206, 163, 22, 135, 63, 113, 22, 141, 241, 76};
     uint8_t salt[SEAL_KEY_SALT_LEN];
     uint8_t nonce[SEAL_DATA_NONCE_LEN];
     int result;
+    unsigned long start, end;
 
     if(penglai_calc_sealed_data_size(additional_MACtext_length, text2encrypt_length) > sealed_data_size){
         eapp_print("sealed_data_size is too small.\n");
@@ -135,13 +143,14 @@ int penglai_seal_data(const uint32_t additional_MACtext_length,
     }
 
     penglai_read_rand(salt, SEAL_KEY_SALT_LEN);
-    result = DeriveSealingKey((const uint8_t *)salt, SEAL_KEY_SALT_LEN, key_buf, SEAL_KEY_LEN);
-    if (result != 0) {
-        eapp_print("DeriveTARootKey failed\n");
-        return -1;
-    }
+    // result = DeriveSealingKey((const uint8_t *)salt, SEAL_KEY_SALT_LEN, key_buf, SEAL_KEY_LEN);
+    // if (result != 0) {
+    //     eapp_print("DeriveTARootKey failed\n");
+    //     return -1;
+    // }
     
     penglai_read_rand(nonce, SEAL_DATA_NONCE_LEN);
+    start = read_cycles_s();
     SM4_OCB_Encrypt(key_buf, nonce, SEAL_DATA_NONCE_LEN, p_text2encrypt, text2encrypt_length,
         p_additional_MACtext, additional_MACtext_length, p_sealed_data->payload_data);
     
@@ -151,6 +160,8 @@ int penglai_seal_data(const uint32_t additional_MACtext_length,
     memset(nonce, 0, SEAL_DATA_NONCE_LEN);
     memset(salt, 0, SEAL_KEY_SALT_LEN);
     memset(key_buf, 0, SEAL_KEY_LEN);
+    end = read_cycles_s();
+    eapp_print("In penglai_seal_data, cycle: %ld", end-start);
     return result;
 }
 

@@ -26,12 +26,20 @@ struct args
   int i;
 };
 
+unsigned long read_cycles(void)
+{
+    unsigned long cycles;
+    asm volatile ("rdcycle %0" : "=r" (cycles));
+    return cycles;
+}
+
 void* create_enclave(void* args0)
 {
   struct args *args = (struct args*)args0;
   void* in = args->in;
   int i = args->i;
   int ret = 0;
+  unsigned long start, end;
   
   struct PLenclave* enclave = malloc(sizeof(struct PLenclave)); 
   struct enclave_args* params = malloc(sizeof(struct enclave_args)); 
@@ -41,6 +49,7 @@ void* create_enclave(void* args0)
   struct elf_args * enclaveFile = (struct elf_args *)in;
   params->untrusted_mem_size = DEFAULT_UNTRUSTED_SIZE;
   params->untrusted_mem_ptr = 0;
+  
   if(PLenclave_create(enclave, enclaveFile, params) < 0 )
   {
     printf("host:%d: failed to create enclave\n");
@@ -49,8 +58,12 @@ void* create_enclave(void* args0)
   else
   {
     
+    
     printf("host:%d: enclave attest\n", i);
+    start = read_cycles();
     PLenclave_attest(enclave, NONCE);
+    end = read_cycles();
+    printf("host:%d: enclave attest cycle: %ld\n", i, end-start);
     printHex((unsigned char*)(enclave->attest_param.report.enclave.signature), 64);
 
     printf("host:%d: enclave run\n", i);

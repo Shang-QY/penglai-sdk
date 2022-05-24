@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-uint8_t seal_data[] = "Data to encrypt, Hello penglai";
+uint8_t *seal_data;
 uint8_t additional_text[] = "add mac text";
 
 void printHex(unsigned char *c, int n)
@@ -31,32 +31,15 @@ int seal_test_func(unsigned long * args)
 {
     int ret;
     unsigned long start, end;
-    // test 1: Can DeriveSealingKey() derive the same key on same salt between multiple setup times?
-    // eapp_print("[TEST 1]: Can DeriveSealingKey() derive the same key on same salt between multiple setup times?\n");
-    // uint8_t salt[SEAL_KEY_SALT_LEN] = {
-    //         0x2d, 0xfb, 0x42, 0x9a, 0x48, 0x69, 0x7c, 0x34,
-    //         0x00, 0x6d, 0xa8, 0x86, 0x9a, 0xf6, 0xd0, 0x12};
-    // uint8_t seal_key[SEAL_KEY_LEN];
-    // start = read_cycles();
-    // ret = DeriveSealingKey(salt, SEAL_KEY_SALT_LEN, seal_key, SEAL_KEY_LEN);
-    // end = read_cycles();
-    // eapp_print("DeriveSealingKey shadow: %ld", end-start);
-    // if(ret != 0)
-    //     eapp_print("DeriveSealingKey() failed\n");
-    // printHex(seal_key, SEAL_KEY_LEN);
-
-    // // test 2: If change salt, can DeriveSealingKey() derive different keys?
-    // eapp_print("[TEST 2]: If change salt, can DeriveSealingKey() derive different keys?\n");
-    // salt[0] = 0xff;
-    // ret = DeriveSealingKey(salt, SEAL_KEY_SALT_LEN, seal_key, SEAL_KEY_LEN);
-    // if(ret != 0)
-    //     eapp_print("DeriveSealingKey() failed\n");
-    // printHex(seal_key, SEAL_KEY_LEN);
 
     // test 3: Seal output cypher text and unseal can get the same plaintext
     eapp_print("[TEST 3]: Can seal output cypher text and unseal get the correct plaintext\n");
-    eapp_print("plaintext: %s, add_text: %s\n", seal_data, additional_text);
+    // eapp_print("plaintext: %s, add_text: %s\n", seal_data, additional_text);
     /******** prepare data to seal ***********/
+    int LEN = 7168;
+    seal_data = (uint8_t *)malloc(LEN);
+    memset(seal_data, 'a', LEN);
+    seal_data[LEN - 1] = '\0';
     uint32_t data_len = strlen((const char *)seal_data);
     uint32_t add_len = strlen((const char *)additional_text);
     uint32_t sealed_data_len = penglai_calc_sealed_data_size(add_len, data_len);
