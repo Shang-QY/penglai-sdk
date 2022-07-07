@@ -66,14 +66,19 @@ int seal_test_func(unsigned long * args)
     }
     uint8_t sealed_data_buffer[sealed_data_len];
     penglai_sealed_data_t *sealed_data = (penglai_sealed_data_t *)sealed_data_buffer;
-    
-
     start = read_cycles();
     ret = penglai_seal_data((const uint32_t)add_len, (const uint8_t *)additional_text,
                 (const uint32_t)data_len, (const uint8_t *)seal_data,
                 (const uint32_t)sealed_data_len, sealed_data);
     end = read_cycles();
     eapp_print("penglai_seal_data shadow: %ld", end-start);
+
+    start = read_cycles();
+    ret = penglai_seal_data((const uint32_t)add_len, (const uint8_t *)additional_text,
+                (const uint32_t)data_len, (const uint8_t *)seal_data,
+                (const uint32_t)sealed_data_len, sealed_data);
+    end = read_cycles();
+    eapp_print("penglai_seal_data cycle: %ld", end-start);
     if (ret == 0){
         eapp_print("seal_data encrypt success\n");
     } else {

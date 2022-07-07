@@ -136,7 +136,7 @@ int penglai_seal_data(const uint32_t additional_MACtext_length,
     uint8_t nonce[SEAL_DATA_NONCE_LEN];
     int result;
     unsigned long start, end;
-
+    start = read_cycles_s();
     if(penglai_calc_sealed_data_size(additional_MACtext_length, text2encrypt_length) > sealed_data_size){
         eapp_print("sealed_data_size is too small.\n");
         return -1;
@@ -150,12 +150,12 @@ int penglai_seal_data(const uint32_t additional_MACtext_length,
     // }
     
     penglai_read_rand(nonce, SEAL_DATA_NONCE_LEN);
-    start = read_cycles_s();
-    SM4_OCB_Encrypt(key_buf, nonce, SEAL_DATA_NONCE_LEN, p_text2encrypt, text2encrypt_length,
-        p_additional_MACtext, additional_MACtext_length, p_sealed_data->payload_data);
     
-    p_sealed_data->txt_encrypt_size = text2encrypt_length;
-    data_copy(p_sealed_data, salt, nonce, p_additional_MACtext, additional_MACtext_length);
+    // SM4_OCB_Encrypt(key_buf, nonce, SEAL_DATA_NONCE_LEN, p_text2encrypt, text2encrypt_length,
+    //     p_additional_MACtext, additional_MACtext_length, p_sealed_data->payload_data);
+    
+    // p_sealed_data->txt_encrypt_size = text2encrypt_length;
+    // data_copy(p_sealed_data, salt, nonce, p_additional_MACtext, additional_MACtext_length);
 
     memset(nonce, 0, SEAL_DATA_NONCE_LEN);
     memset(salt, 0, SEAL_KEY_SALT_LEN);
